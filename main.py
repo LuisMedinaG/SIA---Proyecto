@@ -23,7 +23,7 @@ class CriterioHorasMuertas(Criterio):
                     if sig_h_ini <= cur_h_fin:
                         continue
                     gap = (sig_h_ini - cur_h_fin) // 100
-                    factor += sumOfSquares(gap)
+                    factor += gap**2
         return factor
 
 
@@ -41,7 +41,7 @@ class CriterioGruposEmpalmados(Criterio):
                     if sig_h_ini >= cur_h_fin:
                         continue
                     gap = abs(sig_h_ini - cur_h_fin) // 100
-                    factor += sumOfSquares(gap)
+                    factor += gap**2
         return factor
 
 
@@ -60,7 +60,7 @@ class CriterioDiasLibres(Criterio):
         diff_dias_libres = self._min_dias_libres - dias_libres_reales
         if diff_dias_libres <= 0:
             return 0
-        return sumOfSquares(diff_dias_libres)
+        return diff_dias_libres
 
 
 class Materia:
@@ -101,54 +101,89 @@ class Grupo:
     def __repr__(self):
         return f"{self.id_materia} {self.nrc} | {self.h_inicio} - {self.getHoraFin()} | {self.dias}\n"
 
-def sumOfSquares(num):
-    return num * (num + 1) * (2 * num + 1)
 
 def main():
     criterios = []
-    min_dias_libres = 4
-    criterios.append(CriterioDiasLibres(15, min_dias_libres))
-    criterios.append(CriterioGruposEmpalmados(20))
+    min_dias_libres = 1
     criterios.append(CriterioHorasMuertas(10))
+    criterios.append(CriterioDiasLibres(25, min_dias_libres))
+    criterios.append(CriterioGruposEmpalmados(35))
     # Posibles criterios: hora llegada, hora salida, puntaje maestro, etc.
 
     id_mater = 0
     materias = []
     materia = Materia(id_mater, "i5884", "algoritmia")
     materia.addGrupo(
-        Grupo(id_mater, "a0", 700, 355, [0, 2], "garcia merin, martin"))
-    materia.addGrupo(Grupo(id_mater, "a1", 700, 355, [4], "garcia merin, martin"))
+        Grupo(id_mater, "ALG0", 700, 155, [0, 2], "garcia merin, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "ALG1", 700, 355, [4], "garcia merin, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "ALG2", 1300, 155, [1, 3], "garcia merin, martin"))
     materias.append(materia)
     id_mater += 1
 
     materia = Materia(id_mater, "i5885", "seminario algoritmia")
-    materia.addGrupo(Grupo(id_mater, "sa5", 700, 355, [0, 2], "garcia lora, martin"))
-    materia.addGrupo(Grupo(id_mater, "sa5", 900, 155, [0, 2], "garcia lora, martin"))
-    materia.addGrupo(Grupo(id_mater, "sa0", 1100, 155, [0, 2], "garcia lora, martin"))
-    # materia.addGrupo(Grupo(id_mater, "sa0", 700, 155, [1, 3], "garcia lora, martin"))
-    # materia.addGrupo(
-    #     Grupo(id_mater, "sa1", 1100, 155, [1, 3], "garcia lora, martin"))
-    # materia.addGrupo(
-    #     Grupo(id_mater, "sa2", 1300, 155, [1, 3], "garcia lora, martin"))
-    # materia.addGrupo(
-    #     Grupo(id_mater, "sa3", 1500, 155, [1, 3], "garcia lora, martin"))
-    # materia.addGrupo(
-    #     Grupo(id_mater, "sa4", 1700, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa0", 700, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa1", 1100, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa2", 1300, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa3", 1500, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa4", 1700, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa5", 700, 355, [0, 2], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa6", 900, 155, [0, 2], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "sa7", 1100, 155, [0, 2], "garcia lora, martin"))
+        
+    materias.append(materia)
+    id_mater += 1
+
     
+    materia = Materia(id_mater, "i5885", "inteligencia artificial")
+    materia.addGrupo(
+        Grupo(id_mater, "ia3", 1500, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "ia4", 1700, 155, [1, 3], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "ia5", 700, 355, [0, 2], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "ia6", 900, 155, [0, 2], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "ia7", 1100, 155, [0, 2], "garcia lora, martin"))
+    materias.append(materia)
+    id_mater += 1
+
+    materia = Materia(id_mater, "i5885", "inteligencia artificial")
+    materia.addGrupo(
+        Grupo(id_mater, "fe3", 1500, 355, [1], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "fe5", 700, 355, [5], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "fe6", 900, 155, [4], "garcia lora, martin"))
+    materia.addGrupo(
+        Grupo(id_mater, "fe7", 1100, 155, [0, 2], "garcia lora, martin"))
     materias.append(materia)
     id_mater += 1
 
     # timeSlot = TimeSlot(700, 155, 0)
     materia = Materia(id_mater, "i5884", "programacion")
-    materia.addGrupo(Grupo(id_mater, "p0", 900, 155, [0, 2], "cera valdez, lia"))
-    materia.addGrupo(Grupo(id_mater, "p1", 1300, 155, [0, 2], "garcia meli, juan"))
-    materia.addGrupo(Grupo(id_mater, "p2", 1300, 55, [0, 2], "garcia meli, juan"))
+    materia.addGrupo(
+        Grupo(id_mater, "p0", 900, 155, [0, 2], "cera valdez, lia"))
+    materia.addGrupo(
+        Grupo(id_mater, "p1", 1300, 155, [0, 2], "garcia meli, juan"))
+    materia.addGrupo(
+        Grupo(id_mater, "p2", 1300, 55, [0, 2], "garcia meli, juan"))
     materia.addGrupo(Grupo(id_mater, "p3", 700, 355, [4], "garcia meli, juan"))
     materias.append(materia)
     id_mater += 1
 
-    cant_individuos = 10
-    generaciones = 100
+    cant_individuos = 50
+    generaciones = 200
     fact_mut = 0.5
     alelos = len(materias)
 

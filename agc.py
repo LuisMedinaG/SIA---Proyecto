@@ -17,13 +17,29 @@ class TimeTable:
         return str(self.grupos)
 
     def printTable(self):
+        print(' -' * 31)
+        header = f" {'HORA':^11} |"
+        dias = ('Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab')
+        for i, d in enumerate(dias):
+            header += f" {d:^5} |"
+        print(header)
+        print(' -' * 31)
+        column = ""
+        h_i = 700
         for i in range(6):
-            print(f"DIA | {i}")
-            for g in self.grupos:
-                if i in g.dias and g:
-                    print(f"    | {g.h_inicio:04d}-{g.getHoraFin():04d} {g.nrc}")
-            # print('-'*10)
-        print()
+            h_f = h_i+200
+            hour = f"{h_i:04d}-{h_f:04d}"
+            column = f" {hour:^11} |"
+            for j in range(6):  # TODO 24h
+                cell = ""
+                for g in self.grupos:
+                    if j in g.dias and g.h_inicio >= h_i and g.h_inicio < h_f:
+                        cell += g.nrc
+                column += f" {cell:^5} |"
+            print(column)
+            h_i += 200
+        print(' -' * 31)
+
 
 class Individuo:
     def __init__(self, alelos, cromosoma):
@@ -82,9 +98,9 @@ class AGC:
                 print(f"Generación: {generacion} Mejor Histórico: "
                       f"{self._mejor_historico._cromosoma} "
                       f"{self._mejor_historico._fitness :.10f}")
-                self.makeHorarioFromCromosoma(self._mejor_historico._cromosoma).printTable()
-
             generacion += 1
+            
+        self.makeHorarioFromCromosoma(self._mejor_historico._cromosoma).printTable()
 
     def crearIndividuos(self):
         for i in range(self._cantidad_individuos):
