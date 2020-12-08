@@ -13,7 +13,7 @@ class CriterioHorasMuertas(Criterio):
     def EvaluarCriterio(self, timeTable, HoursOfDay=14, DaysInWeek=6):
         factor = 0
         len_grp = len(timeTable.grupos)
-        for i in range(DaysInWeek):
+        for i in range(DaysInWeek - 1):
             for j, g in enumerate(timeTable.grupos):
                 if j == len_grp - 1:
                     break
@@ -22,32 +22,57 @@ class CriterioHorasMuertas(Criterio):
                     sig_h_ini = timeTable.grupos[j + 1].h_inicio
                     if sig_h_ini <= cur_h_fin:
                         continue
-                    gap = abs(sig_h_ini - cur_h_fin) // 100
-                    factor += gap * (gap + 1) * (2 * gap + 1)
+                    gap = (sig_h_ini - cur_h_fin) // 100
+                    factor += sumOfSquares(gap)
         return factor
 
 
 class CriterioGruposEmpalmados(Criterio):
-    def EvaluarCriterio(self, timeTable):
-        return 0
+    def EvaluarCriterio(self, timeTable, HoursOfDay=14, DaysInWeek=6):
+        factor = 0
+        len_grp = len(timeTable.grupos)
+        for i in range(DaysInWeek - 1):
+            for j, g in enumerate(timeTable.grupos):
+                if j == len_grp - 1:
+                    break
+                if i in g.dias:
+                    cur_h_fin = g.getHoraFin()
+                    sig_h_ini = timeTable.grupos[j + 1].h_inicio
+                    if sig_h_ini >= cur_h_fin:
+                        continue
+                    gap = abs(sig_h_ini - cur_h_fin) // 100
+                    factor += sumOfSquares(gap)
+        return factor
 
 
 class CriterioDiasLibres(Criterio):
-    def EvaluarCriterio(self, timeTable):
-        # return timetable.SelectMany(t => t.Events).Select(e => e.Day).Distinct().Count();
-        # Cuenta de dias distintos
-        return 0
+    def __init__(self, penalty, min_dias_libres):
+        super().__init__(penalty)
+        self._min_dias_libres = min_dias_libres
+
+    def EvaluarCriterio(self, timeTable, DaysInWeek=6):
+        dias_distintos = set()
+        for g in timeTable.grupos:
+            for d in g.dias:
+                dias_distintos.add(d)
+        dias_ocupados = len(dias_distintos)
+        dias_libres_reales = DaysInWeek - dias_ocupados
+        diff_dias_libres = self._min_dias_libres - dias_libres_reales
+        if diff_dias_libres <= 0:
+            return 0
+        return sumOfSquares(diff_dias_libres)
 
 
 class Materia:
-    def __init__(self, clave, nombre="", MIN_VALUE=0, MAX_VALUE=0):
+    def __init__(self, id_, clave, nombre="", MIN_VALUE=0, MAX_VALUE=0):
+        self.id_ = id_
         self.clave = clave
         self.nombre = nombre
         self.grupos = []
         self.MIN_VALUE = MIN_VALUE
         self.MAX_VALUE = MAX_VALUE
 
-    def appendGrupo(self, grupo):
+    def addGrupo(self, grupo):
         self.grupos.append(grupo)
         self.MAX_VALUE += 1
 
@@ -56,7 +81,8 @@ class Materia:
 
 
 class Grupo:
-    def __init__(self, nrc, h_inicio, duracion, dias, profesor):
+    def __init__(self, id_materia, nrc, h_inicio, duracion, dias, profesor):
+        self.id_materia = id_materia
         self.nrc = nrc
         self.h_inicio = h_inicio
         self.duracion = duracion
@@ -73,68 +99,62 @@ class Grupo:
         return self.h_inicio < other.h_inicio
 
     def __repr__(self):
-        return f"{self.nrc} | {self.h_inicio} | {self.dias}"
+        return f"{self.id_materia} {self.nrc} | {self.h_inicio} - {self.getHoraFin()} | {self.dias}\n"
 
+def sumOfSquares(num):
+    return num * (num + 1) * (2 * num + 1)
 
 def main():
     criterios = []
-    # criterios.append(CriterioDiasLibres(10))
-    # criterios.append(CriterioGruposEmpalmados(20))
+    min_dias_libres = 4
+    criterios.append(CriterioDiasLibres(15, min_dias_libres))
+    criterios.append(CriterioGruposEmpalmados(20))
     criterios.append(CriterioHorasMuertas(10))
     # Posibles criterios: hora llegada, hora salida, puntaje maestro, etc.
 
+    id_mater = 0
     materias = []
-    materiaAlgoritmia = Materia("i5884", "algoritmia")
-    # timeSlot = TimeSlot(700, 155, 0)
-    grupo = Grupo("42269", 700, 155, [0, 2], "garcia hernandez, martin")
-    materiaAlgoritmia.appendGrupo(grupo)
-    grupo = Grupo("59565", 900, 155, [1, 3], "espinoza valdez, aurora")
-    materiaAlgoritmia.appendGrupo(grupo)
-    grupo = Grupo("59829", 1700, 155, [1, 3], "GOMEZ ANAYA, DAVID ALEJANDRO")
-    materiaAlgoritmia.appendGrupo(grupo)
+    materia = Materia(id_mater, "i5884", "algoritmia")
+    materia.addGrupo(
+        Grupo(id_mater, "a0", 700, 355, [0, 2], "garcia merin, martin"))
+    materia.addGrupo(Grupo(id_mater, "a1", 700, 355, [4], "garcia merin, martin"))
+    materias.append(materia)
+    id_mater += 1
 
-    materias.append(materiaAlgoritmia)
-    materiaAlgoritmia = Materia("i5884", "algoritmia")
-    # timeSlot = TimeSlot(700, 155, 0)
-    grupo = Grupo("42269", 1700, 155, [0, 2], "garcia hernandez, martin")
-    materiaAlgoritmia.appendGrupo(grupo)
-    grupo = Grupo("59565", 1500, 155, [1, 3], "espinoza valdez, aurora")
-    materiaAlgoritmia.appendGrupo(grupo)
-
-    materias.append(materiaAlgoritmia)
-    materiaBaseDeDatos = Materia("i5890", "base de datos")
-    grupo = Grupo("59601", 1100, 155, [0, 2], "GOMEZ VALDIVIA, JAIME ROBERTO")
-    materiaBaseDeDatos.appendGrupo(grupo)
-    grupo = Grupo("59565", 1100, 155, [1, 3], "URIBE NAVA, SERGIO JAVIER")
-    materiaBaseDeDatos.appendGrupo(grupo)
-    grupo = Grupo("59565", 700, 155, [0, 2], "URIBE NAVA, SERGIO JAVIER")
-    materiaBaseDeDatos.appendGrupo(grupo)
-    grupo = Grupo("59565", 700, 155, [4], "URIBE NAVA, SERGIO JAVIER")
-    materiaBaseDeDatos.appendGrupo(grupo)
-    grupo = Grupo("59565", 1500, 155, [1, 3], "URIBE NAVA, SERGIO JAVIER")
+    materia = Materia(id_mater, "i5885", "seminario algoritmia")
+    materia.addGrupo(Grupo(id_mater, "sa5", 700, 355, [0, 2], "garcia lora, martin"))
+    materia.addGrupo(Grupo(id_mater, "sa5", 900, 155, [0, 2], "garcia lora, martin"))
+    materia.addGrupo(Grupo(id_mater, "sa0", 1100, 155, [0, 2], "garcia lora, martin"))
+    # materia.addGrupo(Grupo(id_mater, "sa0", 700, 155, [1, 3], "garcia lora, martin"))
+    # materia.addGrupo(
+    #     Grupo(id_mater, "sa1", 1100, 155, [1, 3], "garcia lora, martin"))
+    # materia.addGrupo(
+    #     Grupo(id_mater, "sa2", 1300, 155, [1, 3], "garcia lora, martin"))
+    # materia.addGrupo(
+    #     Grupo(id_mater, "sa3", 1500, 155, [1, 3], "garcia lora, martin"))
+    # materia.addGrupo(
+    #     Grupo(id_mater, "sa4", 1700, 155, [1, 3], "garcia lora, martin"))
     
-    materias.append(materiaBaseDeDatos)
+    materias.append(materia)
+    id_mater += 1
 
-    materiaBaseDeDatos = Materia("i5890", "base de datos")
-    grupo = Grupo("59601", 1100, 155, [0, 2], "GOMEZ VALDIVIA, JAIME ROBERTO")
-    materiaBaseDeDatos.appendGrupo(grupo)
-    grupo = Grupo("59565", 1700, 155, [1, 3], "URIBE NAVA, SERGIO JAVIER")
-    materiaBaseDeDatos.appendGrupo(grupo)
-    grupo = Grupo("59565", 1300, 155, [0, 2], "URIBE NAVA, SERGIO JAVIER")
-    materiaBaseDeDatos.appendGrupo(grupo)
-    grupo = Grupo("59565", 1500, 155, [1, 3], "URIBE NAVA, SERGIO JAVIER")
+    # timeSlot = TimeSlot(700, 155, 0)
+    materia = Materia(id_mater, "i5884", "programacion")
+    materia.addGrupo(Grupo(id_mater, "p0", 900, 155, [0, 2], "cera valdez, lia"))
+    materia.addGrupo(Grupo(id_mater, "p1", 1300, 155, [0, 2], "garcia meli, juan"))
+    materia.addGrupo(Grupo(id_mater, "p2", 1300, 55, [0, 2], "garcia meli, juan"))
+    materia.addGrupo(Grupo(id_mater, "p3", 700, 355, [4], "garcia meli, juan"))
+    materias.append(materia)
+    id_mater += 1
 
-    materias.append(materiaBaseDeDatos)
-
-    cant_individuos = 100
-    generaciones = 300
+    cant_individuos = 10
+    generaciones = 100
     fact_mut = 0.5
     alelos = len(materias)
 
     ag = agc.AGC(cant_individuos, alelos, generaciones, fact_mut, materias,
                  criterios, False)
     ag.run()
-    print(ag._individuos)
 
 
 if __name__ == '__main__':

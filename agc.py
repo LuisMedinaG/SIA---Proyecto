@@ -2,6 +2,7 @@ import copy
 import numpy as np
 import heapq
 
+
 class TimeTable:
     def __init__(self, grupos):
         self.grupos = grupos
@@ -13,16 +14,16 @@ class TimeTable:
         return f
 
     def __repr__(self):
-        return f"{self.grupos}"
+        return str(self.grupos)
 
     def printTable(self):
         for i in range(6):
             print(f"DIA | {i}")
             for g in self.grupos:
                 if i in g.dias and g:
-                    print(f"    | {g.h_inicio:04d} - {g.getHoraFin():04d}")
-            print('-'*10)
-
+                    print(f"    | {g.h_inicio:04d}-{g.getHoraFin():04d} {g.nrc}")
+            # print('-'*10)
+        print()
 
 class Individuo:
     def __init__(self, alelos, cromosoma):
@@ -34,7 +35,8 @@ class Individuo:
         return self._fitness < other._fitness
 
     def __repr__(self):
-        return f"{self._cromosoma} = {self._fitness}, "
+        return f"{self._cromosoma} f: {self._fitness} \n"
+
 
 class AGC:
     def __init__(self,
@@ -50,7 +52,7 @@ class AGC:
         self._generaciones = generaciones
         self._p = p
         self._maxim = maxim
-        self._individuos = np.array([])
+        self._individuos = []
 
         self._materias = materias
         self._criterios = criterios
@@ -62,7 +64,6 @@ class AGC:
         generacion = 1
         while generacion <= self._generaciones:
             self.evaluaIndividuos()
-            return
             self.mejor()
             hijos = np.array([])
             while len(hijos) < len(self._individuos):
@@ -76,11 +77,12 @@ class AGC:
                 hijos = np.append(hijos, [h2])
             self.mutacion(hijos)
             self._individuos = np.copy(hijos)
+
             if generacion % 100 == 0:
                 print(f"Generación: {generacion} Mejor Histórico: "
                       f"{self._mejor_historico._cromosoma} "
                       f"{self._mejor_historico._fitness :.10f}")
-                print(self.makeHorarioFromCromosoma(self._mejor_historico._cromosoma))
+                self.makeHorarioFromCromosoma(self._mejor_historico._cromosoma).printTable()
 
             generacion += 1
 
@@ -88,22 +90,25 @@ class AGC:
         for i in range(self._cantidad_individuos):
             valores = []
             for materia in self._materias:
-                r_idx = np.random.randint(materia.MIN_VALUE, materia.MAX_VALUE)
+                # IMPORTANT Materia tiene que tener grupos.
+                r_idx = np.random.randint(0, materia.MAX_VALUE)
                 valores.append(r_idx)
-            cromosoma = np.array(valores)
+            cromosoma = np.array(
+                valores)  # [(0->numGrupos),(0->numGrupos),...]
             individuo = Individuo(self._alelos, cromosoma)
             self._individuos = np.append(self._individuos, [individuo])
 
     def makeHorarioFromCromosoma(self, cromosoma):
         grupos = []
-        for i, alelo in enumerate(cromosoma):
-            materia = self._materias[i]
-            grupo = materia.grupos[alelo]
+        for idx_materia, idx_grupo in enumerate(cromosoma):
+            materia = self._materias[idx_materia]
+            grupo = materia.grupos[idx_grupo]
             heapq.heappush(grupos, grupo)
         return TimeTable(grupos)
 
     def evaluaIndividuos(self):
         for i in self._individuos:
+            # maybe memory?
             horario = self.makeHorarioFromCromosoma(i._cromosoma)
             i._fitness = horario.fitness(self._criterios)
             if not self._maxim:
